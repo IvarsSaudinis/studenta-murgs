@@ -128,7 +128,7 @@
     //------------------
     let door;
 
-    let start = false;
+    var text;
     let startdoors;
 
     function preload() {
@@ -144,6 +144,8 @@
 
     }
 
+var about;
+var dialog;
 
     function create() {
         console.log('Proload...');
@@ -217,11 +219,13 @@
         cursors = this.input.keyboard.createCursorKeys();
 
 
+        // izveidot dialogus augšā kā tekstu -
+        // http://www.html5gamedevs.com/topic/37424-repeat-timer-event-at-random-time/
 
 
         // neliels neko neizsakošs teksts
-        this.add
-            .text(10, 10, "Studenta murgs v. 0.1 (demo)", {
+        var about = this.add
+            .text(5, 565, "Studenta murgs v. 0.1 (demo)", {
                 font: "tahoma",
                 fill: "#ffffff",
                 size: "9px",
