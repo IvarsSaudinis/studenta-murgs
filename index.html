@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <title>Studenta murgs</title>
+    <script src="js/phaser.min.js"></script>
+    <style>
+        html,
+        body,
+        #game-container {
+            margin: 0;
+            padding: 0;
+        }
+
+        #game-container {
+            min-width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game-container>canvas {
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="game-container"></div>
+
+<script>
+    console.log('spele sakusies ielādēties...');
+
+
+    /*
+        Kartes līmeņus labāk nodefinēt ar scēnām it kā
+
+        https://labs.phaser.io/view.html?src=src\scenes\changing%20scene.js
+        https://labs.phaser.io/edit.html?src=src\scenes\changing%20scene%20es6.js
+
+     */
+
+    var start_pre_game = {
+        key: 'loader',
+        active: true,
+        preload: bootLoader,
+        create: bootCreate
+    };
+
+    var start_game = {
+        key: 'game',
+        active: false,
+        visible: false,
+        preload: preload,
+        create: create,
+        update: update
+    };
+
+    var game_over = {
+        key: 'game_over',
+        active: false,
+        visible: false,
+        preload: game_over,
+        create: game_over_create
+    };
+
+    function bootLoader ()
+    {
+        this.load.image('loader', 'assets/images/liepu_pixel.jpg');
+    }
+
+    function bootLoader ()
+    {
+        this.load.image('loader', 'assets/images/liepu_pixel.jpg');
+    }
+
+    // sākuma skata izveide
+    function bootCreate ()
+    {
+        this.add.image(0, 0, 'loader').setOrigin(0);
+
+        var start = this.add.text( 25, 200, "Sākt studenta murgu? \n Spied Enter!",
+            { fontFamily: "Tahoma", fontSize: 74, color: "#c50100", align: 'center' })
+            .setStroke('#000000', 16);
+
+        start.setInteractive();
+
+        // Enter poga nodrošina jaunas scēnas sākumu
+        this.input.keyboard.once("keydown_ENTER", event => {
+            console.log('Nospiedām enter');
+            this.scene.start('game');
+        });
+
+
+    }
+
+    const config = {
+        type: Phaser.AUTO,
+        width: 800, // Loga platums pikseļos
+        height: 600, // augstums
+        parent: "game-container", // ID elements, kurā ievietot canvas
+        pixelArt: true,
+        backgroundColor: '#CCC', // spēles laukuma kods
+        physics: {
+            default: "arcade",
+            arcade: {
+                debug: true, // debugošanas režīms
+                gravity: { y: 0 }
+            }
+        },
+        // scēnas kā prastā ziepenē
+        scene: [ start_pre_game, start_game ],
+
+
+    };
+
+    const game = new Phaser.Game(config);
+
+    let cursors;
+    let player;
+
+    //------------------
+    let door;
+
+    let start = false;
+    let startdoors;
+
+    function preload() {
+        // assets
+        // ieldādējam attēlus. Kartei nepieciešams būt, lai tiles būtu `embeded`
+        this.load.image("tiles_base", "assets/tiles_images/base.png");
+
+        // ģenerētā karte
+        this.load.tilemapTiledJSON("map", "assets/map/world.json");
+
+        // students
+        this.load.atlas("atlas", "assets/atlas/atlas.png", "assets/atlas/atlas.json");
+
+    }
+
+
+    function create() {
+        console.log('Proload...');
+
+        const map = this.make.tilemap({ key: "map" });
+
+        // saglabājam platumu un augstumu
+        const { width, height } = this.sys.game.config;
+
+        // salādējam visus flīžu līmeņus...
+        const tileset_base = map.addTilesetImage("base", "tiles_base");
+        const Below_Ground = map.createStaticLayer("Below Ground", tileset_base, 0, 0);
+        const Ground = map.createStaticLayer("Ground", tileset_base, 0, 0);
+        const Walls = map.createStaticLayer("Walls", tileset_base, 0, 0);
+        const Blood = map.createStaticLayer("Blood", tileset_base, 0, 0);
+        const Windows  = map.createStaticLayer("Windows", tileset_base, 0, 0);
+        const Teachers = map.createStaticLayer("Teachers", tileset_base, 0, 0);
+        const Doors = map.createStaticLayer("Doors", tileset_base, 0, 0);
+
+        // sienu līmenim it kā nevajadzētu iziet cauri
+        Walls.setCollisionByProperty({ sadursme: true });
+
+        // Atrodam objektu no json kartes
+        const spawnPoint = map.findObject("Objects", obj => obj.name === "StartPoint");
+
+        // izliekam spēlējāju uz kartes, ģenerējot `sprite` elementus
+        player = this.physics.add
+            .sprite(spawnPoint.x, spawnPoint.y, "atlas", "misa-front")
+            .setSize(20, 40)
+            .setScale(1.0,1.0)
+            .setOffset(5, 20);
+
+        // spēlētājs neiet cauri sienai...
+        this.physics.add.collider(player, Walls);
+
+
+
+        // Animācijas izveide no spraitiem
+        const anims = this.anims;
+        anims.create({
+            key: "misa-left-walk",
+            frames: anims.generateFrameNames("atlas", { prefix: "misa-left-walk.", start: 0, end: 3, zeroPad: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "misa-right-walk",
+            frames: anims.generateFrameNames("atlas", { prefix: "misa-right-walk.", start: 0, end: 3, zeroPad: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "misa-front-walk",
+            frames: anims.generateFrameNames("atlas", { prefix: "misa-front-walk.", start: 0, end: 3, zeroPad: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "misa-back-walk",
+            frames: anims.generateFrameNames("atlas", { prefix: "misa-back-walk.", start: 0, end: 3, zeroPad: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+
+        // Phaser kameras (var vairākas) nodefinēšana. Sekojam spēlētājam, ierobežojam laukumu, kur kamera kustas
+        const camera = this.cameras.main;
+        camera.startFollow(player);
+        camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+        cursors = this.input.keyboard.createCursorKeys();
+
+
+
+
+        // neliels neko neizsakošs teksts
+        this.add
+            .text(10, 10, "Studenta murgs v. 0.1 (demo)", {
+                font: "tahoma",
+                fill: "#ffffff",
+                size: "9px",
+                padding: { x: 20, y: 10 },
+                backgroundColor: "#e69c63"
+            })
+            .setScrollFactor(0);
+
+        // DEBUG
+        this.input.keyboard.once("keydown_D", event => {
+            // Turn on physics debugging to show player's hitbox
+            this.physics.world.createDebugGraphic();
+
+            // Create worldLayer collision graphic above the player, but below the help text
+            const graphics = this.add
+                .graphics()
+                .setAlpha(0.75)
+                .setDepth(20);
+            Walls.renderDebug(graphics, {
+                tileColor: null, // Color of non-colliding tiles
+                collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+                faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+            });
+        });
+
+
+        /* -------------  MIJIEDARBIBAS ZOOOOONA  --------------------------- */
+
+        var door1 = map.findObject("Objects", obj => obj.name === "start");
+
+        console.log(door1);
+
+
+        // izveidojam durvju zonu  => vēlāk varam nolasīt no objekta parametriem (x, y)
+        door = this.add.zone(door1.x, door1.y).setSize(door1.width, door1.height);
+        this.physics.world.enable(door);
+        door.body.setAllowGravity(false);
+        door.body.moves = false;
+
+        //aktivizēt mijiedarbību
+        startdoors = this.physics.add.overlap(door, player, goal.bind(this));
+
+
+    }
+
+
+
+    function update(time, delta) {
+
+        //this.game.physics.arcade.overlap(this.player, this.doors, this.givealert, null, this);
+
+       /* if (checkOverlap(door, player))
+        {
+           console.log('x');
+        }*/
+
+       // console.log('update!');
+
+    //    door.body.debugBodyColor = door.body.touching.none ? 0x00ffff : 0xffff00;
+
+
+        const speed = 90;
+        const prevVelocity = player.body.velocity.clone();
+
+        // Stop any previous movement from the last frame
+        player.body.setVelocity(0);
+
+        // horizontāli
+        if (cursors.left.isDown) {
+            player.body.setVelocityX(-speed);
+        } else if (cursors.right.isDown) {
+            player.body.setVelocityX(speed);
+        }
+
+        // vertikāli
+        if (cursors.up.isDown) {
+            player.body.setVelocityY(-speed);
+        } else if (cursors.down.isDown) {
+            player.body.setVelocityY(speed);
+        }
+
+        //iebūvētā fīča, lai diognāli staigājot ātrums nepalielinātos
+        player.body.velocity.normalize().scale(speed);
+
+        // studenti sagrozam pret virziena kustību
+        if (cursors.left.isDown) {
+            player.anims.play("misa-left-walk", true);
+        } else if (cursors.right.isDown) {
+            player.anims.play("misa-right-walk", true);
+        } else if (cursors.up.isDown) {
+            player.anims.play("misa-back-walk", true);
+        } else if (cursors.down.isDown) {
+            player.anims.play("misa-front-walk", true);
+        } else {
+            player.anims.stop();
+
+            // atstājam cilvēku kustības virzienā
+            if (prevVelocity.x < 0) player.setTexture("atlas", "misa-left");
+            else if (prevVelocity.x > 0) player.setTexture("atlas", "misa-right");
+            else if (prevVelocity.y < 0) player.setTexture("atlas", "misa-back");
+            else if (prevVelocity.y > 0) player.setTexture("atlas", "misa-front");
+        }
+    }
+
+    function goal(){
+
+        console.log('Ieslēgam game over skatu!');
+
+       // this.scene.start('loader')
+    };
+
+
+</script>
+</body>
+</html>
