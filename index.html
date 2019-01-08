@@ -56,23 +56,11 @@
         update: update
     };
 
-    var game_over = {
-        key: 'game_over',
-        active: false,
-        visible: false,
-        preload: game_over,
-        create: game_over_create
-    };
-
     function bootLoader ()
     {
         this.load.image('loader', 'assets/images/liepu_pixel.jpg');
     }
 
-    function bootLoader ()
-    {
-        this.load.image('loader', 'assets/images/liepu_pixel.jpg');
-    }
 
     // sākuma skata izveide
     function bootCreate ()
@@ -94,6 +82,24 @@
 
     }
 
+    var game_over = {
+        key: 'game_over',
+        active: false,
+        visible: false,
+        preload: game_over_load,
+        create: game_over_create
+    };
+
+    function game_over_load()
+    {
+        this.load.image('g_over', 'assets/images/liepu_game_over.jpg');
+    }
+
+    function game_over_create()
+    {
+        this.add.image(0, 0, 'g_over').setOrigin(0);
+    }
+
     const config = {
         type: Phaser.AUTO,
         width: 800, // Loga platums pikseļos
@@ -109,7 +115,7 @@
             }
         },
         // scēnas kā prastā ziepenē
-        scene: [ start_pre_game, start_game ],
+        scene: [ start_pre_game, start_game, game_over ],
 
 
     };
@@ -324,7 +330,8 @@
 
         console.log('Ieslēgam game over skatu!');
 
-       // this.scene.start('loader')
+        this.scene.start('game_over');
+
     };
 
 
