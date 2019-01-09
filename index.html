@@ -145,7 +145,6 @@
     }
 
 var about;
-var dialog;
 
     function create() {
         console.log('Proload...');
@@ -219,17 +218,13 @@ var dialog;
         cursors = this.input.keyboard.createCursorKeys();
 
 
-        // izveidot dialogus augšā kā tekstu -
-        // http://www.html5gamedevs.com/topic/37424-repeat-timer-event-at-random-time/
-
-
-        // neliels neko neizsakošs teksts
+          // neliels neko neizsakošs teksts
         var about = this.add
-            .text(5, 565, "Studenta murgs v. 0.1 (demo)", {
+            .text(5, 570, "Studenta murgs v. 0.1 (demo)", {
                 font: "tahoma",
-                fill: "#ffffff",
+                fill: "#000000",
                 size: "9px",
-                padding: { x: 20, y: 10 },
+                padding: { x: 20, y: 5 },
                 backgroundColor: "#e69c63"
             })
             .setScrollFactor(0);
@@ -269,8 +264,55 @@ var dialog;
         startdoors = this.physics.add.overlap(door, player, goal.bind(this));
 
 
+        // izveidot dialogus augšā kā tekstu -
+        // http://www.html5gamedevs.com/topic/37424-repeat-timer-event-at-random-time/
+
+        timedEvent = this.time.addEvent({ delay: 1000, callback: onDialog, callbackScope: this});
+
     }
 
+    function rand(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) ) + min;
+    }
+    var dialog;
+    var dialog_text = [
+        "Kas te?",
+        "Kur es atrodos?!?",
+        "Kas tas par mugu, pie velna!",
+        "Vai man tiešām būs jākārto te eksāmens?",
+        "Man ir bails :(",
+        "Smaka te ir neciešama...",
+        "Kāpēc šis teksts te parādās teju vai `random` režīmā?",
+        "Varbūt man jāseko te neiederīgajām bultām?",
+        "Liekas, ka es nekad netikšu ārā!",
+        "Visapkārt nāves klusums kā kapsētā",
+        "Kaut kur fonā pil ūdens",
+        "Ir sajūta, ka būs jāsamazina alus dzeršana..."
+    ];
+
+    function onDialog ()
+    {
+        dialog = this.add
+            .text(5, 10, "                                                                              ", {
+                padding: { x: 20, y: 10 },
+                backgroundColor: "#f4fcff"
+            }).setScrollFactor(0);
+
+        dialog = this.add
+            .text(5, 10, dialog_text[rand(0, dialog_text.length)], {
+                font: "tahoma",
+                fill: "#000000",
+                fontSize: "16",
+                padding: { x: 20, y: 10 },
+                backgroundColor: "#f4fcff"
+            })
+            .setScrollFactor(0);
+
+        console.log('notiek laika klikšķis');
+
+
+        timedEvent.reset({ delay: Phaser.Math.Between(500,5000), callback: onDialog, callbackScope: this, repeat: 1});
+    }
 
 
     function update(time, delta) {
